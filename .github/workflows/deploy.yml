@@ -24,20 +24,26 @@ jobs:
     - name: Build Next.js app
       run: npm run build
 
+    - name: Start SSH agent and add key
+      id: ssh-setup
+      run: |
+        eval $(ssh-agent -s)
+        echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+
     - name: Deploy to EC2
       env:
         EC2_HOST: ${{ secrets.EC2_HOST }}
         EC2_USER: ${{ secrets.EC2_USER }}
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       run: |
-        echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
-        ssh -o StrictHostKeyChecking=no -i $SSH_PRIVATE_KEY $EC2_USER@$EC2_HOST << 'EOF'
+        ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
           rm -rf ~/hello-world-app || true
           mkdir ~/hello-world-app
         EOF
-        scp -o StrictHostKeyChecking=no -i $SSH_PRIVATE_KEY -r ./* $EC2_USER@$EC2_HOST:~/hello-world-app/
-        ssh -o StrictHostKeyChecking=no -i $SSH_PRIVATE_KEY $EC2_USER@$EC2_HOST << 'EOF'
+        scp -o StrictHostKeyChecking=no -r ./* $EC2_USER@$EC2_HOST:~/hello-world-app/
+        ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
           cd ~/hello-world-app
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+          . ~/.nvm/nvm.sh
           nvm install 18
           nvm use 18
           npm install
