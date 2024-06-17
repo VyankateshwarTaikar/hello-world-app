@@ -48,9 +48,9 @@ jobs:
       run: |
         echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
         ssh -o StrictHostKeyChecking=no -i $SSH_PRIVATE_KEY $EC2_USER@$EC2_HOST << 'EOF'
-          docker pull your-docker-username/hello-world-app:latest
+          docker pull instantdocker2024/hello-world-app:latest
           docker stop hello-world-app || true
           docker rm hello-world-app || true
-          docker run -d -p 3000:3000 --name hello-world-app your-docker-username/hello-world-app:latest
+          docker run -d -p 3000:3000 --name hello-world-app instantdocker2024/hello-world-app:latest
         EOF
 
