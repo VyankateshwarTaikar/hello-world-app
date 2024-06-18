@@ -10,42 +10,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Build Next.js app
-      run: npm run build
+      - name: Build Next.js app
+        run: npm run build
 
-    - name: Decode and setup SSH key
-      id: ssh-setup
-      run: |
-        echo "${{ secrets.SSH_PRIVATE_KEY_BASE64 }}" | base64 --decode > private_key.pem
-        chmod 600 private_key.pem
-        eval "$(ssh-agent -s)"
-        ssh-add private_key.pem
+      - name: Decode and setup SSH key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY_BASE64 }}" | base64 --decode > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_rsa
 
-    - name: Deploy to EC2
-      env:
-        EC2_HOST: ${{ secrets.EC2_HOST }}
-        EC2_USER: ${{ secrets.EC2_USER }}
-      run: |
-        ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
-          cd ~/hello-world-app
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-          . ~/.nvm/nvm.sh
-          nvm install 18
-          nvm use 18
-          npm install
-          npm run build
-          pm2 stop hello-world-app || true
-          pm2 start npm --name "hello-world-app" -- start
-        EOF
-      shell: bash
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
+            cd ~/hello-world-app
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+            . ~/.nvm/nvm.sh
+            nvm install 18
+            nvm use 18
+            npm install
+            npm run build
+            pm2 stop hello-world-app || true
+            pm2 start npm --name "hello-world-app" -- start
+          EOF
+        shell: bash
