@@ -1,19 +1,51 @@
-ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
-    cd ~/hello-world-app
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-    . ~/.nvm/nvm.sh
-    nvm install 18
-    nvm use 18
-    npm install
-    npm run build
-    pm2 stop hello-world-app || true
-    pm2 start npm --name "hello-world-app" -- start
-  EOF
-  shell: /usr/bin/bash -e {0}
-  env:
-    EC2_HOST: ***
-    EC2_USER: ***
-Pseudo-terminal will not be allocated because stdin is not a terminal.
-Warning: Permanently added '***' (ED25519) to the list of known hosts.
-***@***: Permission denied (publickey).
-Error: Process completed with exit code 255
+name: Deploy Next.js App to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build Next.js app
+      run: npm run build
+
+    - name: Decode and setup SSH key
+      id: ssh-setup
+      run: |
+        echo "${{ secrets.SSH_PRIVATE_KEY_BASE64 }}" | base64 --decode > private_key.pem
+        chmod 600 private_key.pem
+        eval "$(ssh-agent -s)"
+        ssh-add private_key.pem
+
+    - name: Deploy to EC2
+      env:
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USER: ${{ secrets.EC2_USER }}
+      run: |
+        ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
+          cd ~/hello-world-app
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+          . ~/.nvm/nvm.sh
+          nvm install 18
+          nvm use 18
+          npm install
+          npm run build
+          pm2 stop hello-world-app || true
+          pm2 start npm --name "hello-world-app" -- start
+        EOF
+      shell: bash
