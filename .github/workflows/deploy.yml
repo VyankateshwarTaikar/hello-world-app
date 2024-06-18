@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '18.19.1'  # Adjust Node.js version as needed
+          node-version: '14'  # Adjust Node.js version as needed
 
       - name: Install dependencies
         run: npm install
@@ -28,8 +28,10 @@ jobs:
         env:
           EC2_KEY: ${{ secrets.EC2_KEY }}
         run: |
+          mkdir -p ~/.ssh
           echo "${{ secrets.EC2_KEY }}" > $HOME/ec2-key.pem
           chmod 400 $HOME/ec2-key.pem
+          ssh-keyscan -H $EC2_HOST >> $HOME/.ssh/known_hosts
 
       - name: Deploy to EC2
         env:
