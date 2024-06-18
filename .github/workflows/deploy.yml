@@ -25,14 +25,12 @@ jobs:
       run: npm run build
 
     - name: Decode and setup SSH key
-    - name: Decode and setup SSH key
       run: |
         echo "${{ secrets.SSH_PRIVATE_KEY_BASE64 }}" | base64 --decode > $HOME/.ssh/id_rsa
         chmod 600 $HOME/.ssh/id_rsa
         eval "$(ssh-agent -s)"
         ssh-add $HOME/.ssh/id_rsa
         chmod 700 $HOME/.ssh
-
 
     - name: Deploy to EC2
       env:
