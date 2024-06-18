@@ -28,7 +28,7 @@ jobs:
       id: ssh-setup
       run: |
         eval $(ssh-agent -s)
-        echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+        echo "${{ secrets.SSH_PRIVATE_KEY_BASE64 }}" | base64 -d | ssh-add - > /dev/null
 
     - name: Deploy to EC2
       env:
